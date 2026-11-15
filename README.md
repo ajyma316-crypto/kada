@@ -33,6 +33,8 @@ npm run build      # сборка в dist/
 
 ## Подключение Supabase (авторизация и синхронизация)
 
+Опубликованное приложение подключено к проекту `kvpabwwwemolpsrruruc` — параметры в `.env.production` (только публичный ключ). Для своей копии:
+
 1. Создайте проект на supabase.com.
 2. Выполните `supabase/migrations/0001_init.sql` в SQL Editor (таблицы + Row Level Security).
 3. Скопируйте `.env.example` в `.env` (локально) или задайте переменные в Vercel: `VITE_SUPABASE_URL` и `VITE_SUPABASE_ANON_KEY`.

@@ -185,13 +185,25 @@ function Account() {
     );
   }
 
+  /** Перевод частых ошибок Supabase Auth; неизвестные показываются как есть. */
+  function authError(msg: string): string {
+    const m = msg.toLowerCase();
+    if (m.includes('invalid login credentials')) return t('account.err.invalid');
+    if (m.includes('email not confirmed')) return t('account.err.notConfirmed');
+    if (m.includes('already registered') || m.includes('already been registered')) return t('account.err.exists');
+    if (m.includes('rate limit') || m.includes('too many') || m.includes('security purposes')) return t('account.err.rateLimit');
+    if (m.includes('password')) return t('account.err.weak');
+    if (m.includes('fetch') || m.includes('network')) return t('account.err.network');
+    return msg;
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     setMsg(null);
     const err = mode === 'in' ? await cloud.signIn(email, password) : await cloud.signUp(email, password);
     setBusy(false);
-    if (err) setMsg({ tone: 'error', text: err });
+    if (err) setMsg({ tone: 'error', text: authError(err) });
     else if (mode === 'up') setMsg({ tone: 'info', text: t('account.checkEmail') });
   }
 
@@ -222,7 +234,7 @@ function Account() {
               onClick={async () => {
                 if (!email) return setMsg({ tone: 'error', text: t('account.enterEmail') });
                 const err = await cloud.resetPassword(email);
-                setMsg(err ? { tone: 'error', text: err } : { tone: 'info', text: t('account.resetSent') });
+                setMsg(err ? { tone: 'error', text: authError(err) } : { tone: 'info', text: t('account.resetSent') });
               }}
             >
               {t('account.forgot')}
