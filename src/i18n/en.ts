@@ -346,6 +346,7 @@ export const en: Dict = {
   'account.err.invalid': 'Incorrect email or password.',
   'account.err.notConfirmed': 'Email not confirmed yet — open the email from Supabase and follow the link.',
   'account.err.exists': 'This email is already registered — please sign in.',
+  'account.err.emailLimit': 'The server cannot send the email right now (email limit reached). Try again later or contact the administrator.',
   'account.err.rateLimit': 'Too many attempts. Please wait a little and try again.',
   'account.err.weak': 'Password not accepted: use at least 8 characters.',
   'account.err.network': 'Cannot reach the server. Check your connection.',

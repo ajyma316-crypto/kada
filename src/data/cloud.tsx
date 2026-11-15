@@ -14,7 +14,8 @@ interface CloudCtx {
   error: string | null;
   sync: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<string | null>;
-  signUp: (email: string, password: string) => Promise<string | null>;
+  /** error — текст ошибки; needsConfirm — нужно подтвердить email (если подтверждение включено в Supabase). */
+  signUp: (email: string, password: string) => Promise<{ error: string | null; needsConfirm: boolean }>;
   resetPassword: (email: string) => Promise<string | null>;
   signOut: (wipeLocal: boolean) => Promise<void>;
 }
@@ -103,13 +104,14 @@ export function CloudProvider({ children }: { children: ReactNode }) {
       return error?.message ?? null;
     },
     async signUp(email, password) {
-      if (!supabase) return 'not-configured';
-      const { error } = await supabase.auth.signUp({
+      if (!supabase) return { error: 'not-configured', needsConfirm: false };
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: { emailRedirectTo: location.origin + location.pathname },
       });
-      return error?.message ?? null;
+      // Если в Supabase выключено подтверждение email, сессия приходит сразу — пользователь уже вошёл.
+      return { error: error?.message ?? null, needsConfirm: !error && !data.session };
     },
     async resetPassword(email) {
       if (!supabase) return 'not-configured';

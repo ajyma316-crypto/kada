@@ -191,6 +191,7 @@ function Account() {
     if (m.includes('invalid login credentials')) return t('account.err.invalid');
     if (m.includes('email not confirmed')) return t('account.err.notConfirmed');
     if (m.includes('already registered') || m.includes('already been registered')) return t('account.err.exists');
+    if (m.includes('email rate limit') || m.includes('error sending')) return t('account.err.emailLimit');
     if (m.includes('rate limit') || m.includes('too many') || m.includes('security purposes')) return t('account.err.rateLimit');
     if (m.includes('password')) return t('account.err.weak');
     if (m.includes('fetch') || m.includes('network')) return t('account.err.network');
@@ -201,10 +202,16 @@ function Account() {
     e.preventDefault();
     setBusy(true);
     setMsg(null);
-    const err = mode === 'in' ? await cloud.signIn(email, password) : await cloud.signUp(email, password);
+    if (mode === 'in') {
+      const err = await cloud.signIn(email, password);
+      setBusy(false);
+      if (err) setMsg({ tone: 'error', text: authError(err) });
+      return;
+    }
+    const { error, needsConfirm } = await cloud.signUp(email, password);
     setBusy(false);
-    if (err) setMsg({ tone: 'error', text: authError(err) });
-    else if (mode === 'up') setMsg({ tone: 'info', text: t('account.checkEmail') });
+    if (error) setMsg({ tone: 'error', text: authError(error) });
+    else if (needsConfirm) setMsg({ tone: 'info', text: t('account.checkEmail') });
   }
 
   return (
