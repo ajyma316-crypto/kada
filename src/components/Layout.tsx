@@ -53,7 +53,7 @@ export function Layout() {
 
       <div className="min-w-0 flex-1">
         {/* Верхняя панель (мобильная) */}
-        <header className="no-print sticky top-0 z-30 flex items-center justify-between border-b border-line bg-bg/85 px-4 py-3 backdrop-blur lg:hidden">
+        <header className="no-print sticky top-0 z-30 flex items-center justify-between border-b border-line bg-bg/85 px-4 pb-3 pt-[calc(0.75rem+var(--sat))] backdrop-blur lg:hidden">
           <Brand />
           <div className="flex items-center gap-1">
             <NavLink to="/calculator" className="btn-quiet p-2" aria-label={t('nav.calculator')}>
@@ -65,7 +65,7 @@ export function Layout() {
           </div>
         </header>
 
-        <main className="mx-auto w-full max-w-5xl px-4 pb-28 pt-6 sm:px-6 lg:px-10 lg:pb-12 lg:pt-10">
+        <main className="mx-auto w-full max-w-5xl px-4 pb-[calc(7rem+var(--sab))] pt-6 sm:px-6 lg:px-10 lg:pb-12 lg:pt-10">
           <SaveErrorBanner />
           <Outlet />
         </main>
@@ -73,7 +73,7 @@ export function Layout() {
 
       {/* Нижняя навигация (мобильная) */}
       <nav
-        className="no-print fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden"
+        className="no-print fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-line bg-surface/95 pb-[var(--sab)] backdrop-blur lg:hidden"
         aria-label={t('nav.main')}
       >
         {[...NAV.filter((n) => n.mobile), NAV.find((n) => n.to === '/rules')!].map((n) => (

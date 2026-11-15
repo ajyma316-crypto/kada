@@ -387,6 +387,10 @@ export const ru: Dict = {
   // Отчёт
   'report.title': 'Отчёт о возмещении намазов',
   'report.print': 'Печать / PDF',
+  'report.printOnly': 'Печать',
+  'report.sharePdf': 'Поделиться PDF',
+  'report.pdfBusy': 'Создание PDF…',
+  'report.pdfError': 'Не удалось создать PDF',
   'report.perDay': 'План в день',
   'report.monthly': 'По месяцам',
   'report.madhab': 'Мазхаб: {madhab}.',

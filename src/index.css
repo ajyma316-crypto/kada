@@ -18,6 +18,12 @@
   --warn-soft: 253 243 219;
   --danger: 185 28 28;
   color-scheme: light;
+  /* Безопасные отступы (чёлка, строка состояния, полоска жестов).
+     iOS — env(); Android (Capacitor SystemBars) — переменные --safe-area-inset-*. */
+  --sat: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px));
+  --sab: max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px));
+  --sal: max(env(safe-area-inset-left, 0px), var(--safe-area-inset-left, 0px));
+  --sar: max(env(safe-area-inset-right, 0px), var(--safe-area-inset-right, 0px));
 }
 .dark {
   --bg: 9 17 15;
@@ -38,6 +44,10 @@
 
 @layer base {
   html { -webkit-tap-highlight-color: transparent; }
+  #root { padding-left: var(--sal); padding-right: var(--sar); }
+  /* В приложении: без «резинового» прокручивания всей страницы и без выделения текста на кнопках. */
+  html.native, html.native body { overscroll-behavior-y: none; }
+  html.native button, html.native nav, html.native a { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
   body {
     @apply bg-bg text-ink font-sans antialiased;
     font-feature-settings: 'cv11', 'ss01';

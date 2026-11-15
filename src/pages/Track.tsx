@@ -11,6 +11,7 @@ import { actions, useStore } from '../data/store';
 import { localDateOf, todayISO } from '../domain/dates';
 import { PRAYER_AR, type PrayerId, type QadaLog } from '../domain/types';
 import { useT } from '../i18n';
+import { hapticTap } from '../platform';
 import { useRules, useSummary, useVisiblePrayers } from '../lib/hooks';
 
 export default function Track() {
@@ -29,7 +30,7 @@ export default function Track() {
 
   function mark(p: PrayerId, count = 1) {
     const entry = actions.logPrayer(p, count);
-    if (navigator.vibrate) navigator.vibrate(12);
+    hapticTap();
     toast({
       text: `${t(`prayer.${p}`)} +${count} · ${t('track.left', { n: Math.max(0, s.remaining[p] - count) })}`,
       actionLabel: t('common.undo'),

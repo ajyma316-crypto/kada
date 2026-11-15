@@ -9,6 +9,8 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      // Регистрация вручную в main.tsx — только на сайте, не в приложении.
+      injectRegister: null,
       includeAssets: ['icon.svg'],
       manifest: {
         name: 'QADA — قضاء الصلاة',

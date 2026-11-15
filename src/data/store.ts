@@ -21,6 +21,7 @@ import {
   localStoragePersistence,
   type Persistence,
 } from './persistence';
+import { readNativeBackup, scheduleNativeBackup, writeNativeBackup } from '../platform/backup';
 
 type Listener = () => void;
 
@@ -77,6 +78,7 @@ function flush(): Promise<void> {
         await persistence!.save(persisted, target);
         persisted = target;
         channel?.postMessage('changed');
+        scheduleNativeBackup(target);
       } while (pending || state !== persisted);
       setStatus('ok');
     } catch (e) {
@@ -128,6 +130,12 @@ export async function initStore(p?: Persistence): Promise<{ migrated: boolean }>
         persisted = loaded;
       } else {
         persisted = null; // первая запись будет полной
+        // Приложение: хранилище WebView пусто, но есть страховочная копия — восстанавливаем.
+        const backup = await readNativeBackup();
+        if (backup) {
+          state = backup;
+          scheduleFlush();
+        }
       }
       rememberTheme(state);
       emit();
@@ -179,7 +187,7 @@ channel?.addEventListener('message', async () => {
 // Перед сворачиванием/закрытием — записать незавершённые изменения.
 if (typeof document !== 'undefined') {
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') void flush();
+    if (document.visibilityState === 'hidden') void flush().then(() => writeNativeBackup());
   });
 }
 

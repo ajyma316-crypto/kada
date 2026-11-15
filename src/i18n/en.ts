@@ -370,6 +370,10 @@ export const en: Dict = {
 
   'report.title': 'Qada progress report',
   'report.print': 'Print / PDF',
+  'report.printOnly': 'Print',
+  'report.sharePdf': 'Share PDF',
+  'report.pdfBusy': 'Creating PDF…',
+  'report.pdfError': 'Could not create the PDF',
   'report.perDay': 'Plan per day',
   'report.monthly': 'By month',
   'report.madhab': 'Madhhab: {madhab}.',

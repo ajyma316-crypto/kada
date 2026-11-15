@@ -3,6 +3,7 @@ import { Route, Routes } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { ToastProvider } from './components/Toast';
 import { useStore } from './data/store';
+import { setSystemBarsDark } from './platform';
 import Dashboard from './pages/Dashboard';
 import Calculator from './pages/Calculator';
 import Track from './pages/Track';
@@ -22,6 +23,7 @@ export default function App() {
       const dark = theme === 'dark' || (theme === 'system' && mq.matches);
       document.documentElement.classList.toggle('dark', dark);
       document.querySelector('meta[name=theme-color]')?.setAttribute('content', dark ? '#09110f' : '#f7f6f2');
+      setSystemBarsDark(dark);
     };
     apply();
     mq.addEventListener('change', apply);

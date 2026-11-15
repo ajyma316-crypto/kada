@@ -387,6 +387,10 @@ export const ky: Dict = {
   // Отчет
   'report.title': 'Намаздарды каза кылуу боюнча отчет',
   'report.print': 'Басып чыгаруу / PDF',
+  'report.printOnly': 'Басып чыгаруу',
+  'report.sharePdf': 'PDF бөлүшүү',
+  'report.pdfBusy': 'PDF түзүлүүдө…',
+  'report.pdfError': 'PDF түзүү мүмкүн болгон жок',
   'report.perDay': 'Күнүнө план',
   'report.monthly': 'Айлар боюнча',
   'report.madhab': 'Мазхаб: {madhab}.',

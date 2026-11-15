@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">QADA</string>
+    <string name="title_activity_main">QADA</string>
+    <string name="package_name">com.ajyma.qada</string>
+    <string name="custom_url_scheme">com.ajyma.qada</string>
+</resources>

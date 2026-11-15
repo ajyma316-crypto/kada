@@ -261,7 +261,7 @@ export default function Calculator() {
             e.preventDefault();
             document.getElementById('result')?.scrollIntoView({ behavior: 'smooth' });
           }}
-          className="no-print fixed inset-x-4 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-20 flex items-center justify-between rounded-2xl bg-ink px-4 py-3 text-sm text-bg shadow-lg lg:hidden"
+          className="no-print fixed inset-x-4 bottom-[calc(4.75rem+var(--sab))] z-20 flex items-center justify-between rounded-2xl bg-ink px-4 py-3 text-sm text-bg shadow-lg lg:hidden"
         >
           <span>
             {t('calc.result')}: <span className="num font-semibold">{res.approximate ? '≈ ' : ''}{tr.num(res.total)}</span>

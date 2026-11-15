@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState, ty
 import { actions, onUserChange } from './store';
 import { cloudConfigured, supabase } from './supabase';
 import { deleteAccount as deleteAccountRpc, syncNow } from './sync';
+import { SITE_URL, onAppResume } from '../platform';
 
 type SyncStatus = 'idle' | 'syncing' | 'error' | 'offline';
 
@@ -82,6 +83,7 @@ export function CloudProvider({ children }: { children: ReactNode }) {
     const online = () => sync();
     const offline = () => setStatus('offline');
     const visible = () => document.visibilityState === 'visible' && sync();
+    const offResume = onAppResume(() => void sync());
     window.addEventListener('online', online);
     window.addEventListener('offline', offline);
     document.addEventListener('visibilitychange', visible);
@@ -91,6 +93,7 @@ export function CloudProvider({ children }: { children: ReactNode }) {
       window.removeEventListener('online', online);
       window.removeEventListener('offline', offline);
       document.removeEventListener('visibilitychange', visible);
+      offResume();
     };
   }, [userId, sync]);
 
@@ -110,7 +113,7 @@ export function CloudProvider({ children }: { children: ReactNode }) {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: { emailRedirectTo: location.origin + location.pathname },
+        options: { emailRedirectTo: SITE_URL },
       });
       // Если в Supabase выключено подтверждение email, сессия приходит сразу — пользователь уже вошёл.
       return { error: error?.message ?? null, needsConfirm: !error && !data.session };
@@ -118,7 +121,7 @@ export function CloudProvider({ children }: { children: ReactNode }) {
     async resetPassword(email) {
       if (!supabase) return 'not-configured';
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: location.origin + location.pathname,
+        redirectTo: SITE_URL,
       });
       return error?.message ?? null;
     },

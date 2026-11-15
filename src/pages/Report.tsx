@@ -1,5 +1,5 @@
-/** Печатный отчёт (через «Печать → Сохранить как PDF»). Без навигации, оптимизирован для A4. */
-import { useMemo } from 'react';
+/** Отчёт для печати и PDF. На сайте — печать или PDF-файл; в приложении — PDF через «Поделиться». */
+import { useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Icon } from '../components/Icon';
 import { useStore } from '../data/store';
@@ -8,6 +8,9 @@ import { series } from '../domain/stats';
 import { PRAYER_AR } from '../domain/types';
 import { useT } from '../i18n';
 import { useSummary, useVisiblePrayers } from '../lib/hooks';
+import { elementToPdf } from '../lib/pdf';
+import { isNative, shareFile } from '../platform';
+import { useToast } from '../components/Toast';
 
 export default function Report() {
   const tr = useT();
@@ -19,13 +22,41 @@ export default function Report() {
   const calc = useStore((st) => st.calc);
   const plan = useStore((st) => st.plan);
   const months = useMemo(() => series(logs, 'month', 12, todayISO()), [logs]);
+  const sheet = useRef<HTMLDivElement>(null);
+  const [busy, setBusy] = useState(false);
+  const toast = useToast();
+
+  async function makePdf() {
+    if (!sheet.current) return;
+    setBusy(true);
+    try {
+      const blob = await elementToPdf(sheet.current);
+      await shareFile(`qada-report-${todayISO()}.pdf`, blob, 'application/pdf');
+    } catch (e) {
+      toast({ text: t('report.pdfError') });
+      console.error(e);
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
-    <div className="mx-auto max-w-3xl bg-bg px-6 py-8 print:max-w-none print:p-0">
-      <div className="no-print mb-6 flex justify-between">
+    <div className="mx-auto max-w-3xl bg-bg px-6 pb-8 pt-[calc(2rem+var(--sat))] print:max-w-none print:p-0">
+      <div className="no-print mb-6 flex flex-wrap justify-between gap-2">
         <Link to="/stats" className="btn-ghost">← {t('common.back')}</Link>
-        <button className="btn-primary" onClick={() => window.print()}><Icon name="print" size={17} /> {t('report.print')}</button>
+        <div className="flex gap-2">
+          {!isNative && (
+            <button className="btn-ghost" onClick={() => window.print()}>
+              <Icon name="print" size={17} /> {t('report.printOnly')}
+            </button>
+          )}
+          <button className="btn-primary" onClick={makePdf} disabled={busy}>
+            <Icon name={isNative ? 'upload' : 'download'} size={17} /> {busy ? t('report.pdfBusy') : isNative ? t('report.sharePdf') : 'PDF'}
+          </button>
+        </div>
       </div>
+
+      <div ref={sheet} className="bg-bg">
 
       <header className="mb-6 flex items-end justify-between border-b border-line pb-4">
         <div>
@@ -94,6 +125,7 @@ export default function Report() {
         {calc?.result && <ul className="mt-2 list-disc ps-5">{calc.result.assumptions.map((a, i) => <li key={i}>{tr.note(a)}</li>)}</ul>}
         <p className="mt-2">{t('report.disclaimer')}</p>
       </section>
+      </div>
     </div>
   );
 }

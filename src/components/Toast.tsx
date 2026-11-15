@@ -22,7 +22,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <Ctx.Provider value={show}>
       {children}
-      <div className="pointer-events-none fixed inset-x-0 bottom-24 z-50 flex justify-center px-4 lg:bottom-8" aria-live="polite">
+      <div className="pointer-events-none fixed inset-x-0 bottom-[calc(6rem+var(--sab))] z-50 flex justify-center px-4 lg:bottom-8" aria-live="polite">
         {toast && (
           <div key={toast.id} className="pointer-events-auto flex items-center gap-3 rounded-2xl bg-ink py-2.5 pl-4 pr-2 text-sm text-bg shadow-lg">
             <span>{toast.text}</span>

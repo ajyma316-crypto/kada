@@ -2,6 +2,8 @@
 export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   darkMode: 'class',
+  // На сенсорных экранах hover-стили не «залипают» после нажатия.
+  future: { hoverOnlyWhenSupported: true },
   theme: {
     extend: {
       colors: {
