@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
 import type { DebtEvent, QadaLog } from '../../domain/types';
-import type { ProfileRow, SyncBackend } from '../sync';
+import { normTs, type ProfileRow, type SyncBackend } from '../sync';
 
 /** Имитация сервера: серверное updated_at (как триггер из миграции 0002), RLS по userId. */
 class FakeServer {
@@ -12,16 +12,23 @@ class FakeServer {
   pushedLogCounts: number[] = [];
   pulledLogCounts: number[] = [];
   constructor(public supportsCursor = true) {}
+  micro = 0;
+  /** Время сервера в формате Postgres с микросекундами. */
+  pgNow() {
+    const d = new Date(this.clock).toISOString().slice(0, 23);
+    return `${d}${String(this.micro).padStart(3, '0')}+00:00`;
+  }
   tick(ms = 1000) {
     this.clock += ms;
-    return new Date(this.clock).toISOString();
+    this.micro = (this.micro + 137) % 1000;
+    return this.pgNow();
   }
   backend(): SyncBackend {
     return {
       pull: async (user, since) => {
-        const now = new Date(this.clock).toISOString(); // время сервера ДО выборки
+        const now = this.pgNow(); // время сервера ДО выборки
         const pick = <T extends { user: string; updated: string }>(m: Map<string, T>) =>
-          [...m.values()].filter((r) => r.user === user && (!this.supportsCursor || !since || r.updated > since));
+          [...m.values()].filter((r) => r.user === user && (!this.supportsCursor || !since || normTs(r.updated) > normTs(since)));
         const logs = pick(this.logs);
         const events = pick(this.events);
         this.pulledLogCounts.push(logs.length);
@@ -39,12 +46,15 @@ class FakeServer {
           serverTime: this.supportsCursor ? now : null,
         };
       },
+      // Одна пачка = одна транзакция = одинаковое updated_at (как now() в Postgres).
       pushLogs: async (user, logs) => {
         this.pushedLogCounts.push(logs.length);
-        for (const l of logs) this.logs.set(l.id, { ...l, user, updated: this.tick(1) });
+        const t = this.tick(1);
+        for (const l of logs) this.logs.set(l.id, { ...l, user, updated: t });
       },
       pushEvents: async (user, events) => {
-        for (const e of events) this.events.set(e.id, { ...e, user, updated: this.tick(1) });
+        const t = this.tick(1);
+        for (const e of events) this.events.set(e.id, { ...e, user, updated: t });
       },
       getProfile: async (user) => this.profiles.get(user) ?? null,
       putProfile: async (user, p) => {
@@ -67,16 +77,25 @@ async function device() {
 const USER = 'user-1';
 const debt = { fajr: 100, dhuhr: 100, asr: 100, maghrib: 100, isha: 100, witr: 0 };
 
+describe('метки времени', () => {
+  it('сохраняют микросекунды и сравниваются как строки', () => {
+    expect(normTs('2026-11-15T21:21:35.558123+00:00')).toBe('2026-11-15T21:21:35.558123Z');
+    expect(normTs('2026-11-15T21:21:35.558Z')).toBe('2026-11-15T21:21:35.558000Z');
+    expect(normTs('2026-11-15 21:21:35+00')).toBe('2026-11-15T21:21:35.000000Z');
+    expect(normTs('2026-11-15T21:21:35.558123+00:00') > normTs('2026-11-15T21:21:35.558Z')).toBe(true);
+  });
+});
+
 describe('курсор', () => {
   it('не уходит дальше «время сервера − запас» и догоняет последнее изменение', async () => {
     const { nextCursor, SAFETY_MS } = await import('../sync');
     const t = (m: number) => new Date(Date.UTC(2026, 0, 1, 0, m)).toISOString();
     // запись в 10:00, сервер сейчас 10:00:30 → курсор ограничен 9:59:30
     expect(nextCursor(null, t(10), new Date(Date.UTC(2026, 0, 1, 0, 10, 30)).toISOString())).toBe(
-      new Date(Date.UTC(2026, 0, 1, 0, 10, 30) - SAFETY_MS).toISOString(),
+      normTs(new Date(Date.UTC(2026, 0, 1, 0, 10, 30) - SAFETY_MS).toISOString()),
     );
-    // через 10 минут без новых записей курсор = 10:00
-    expect(nextCursor(t(9), t(10), t(20))).toBe(t(10));
+    // через 10 минут без новых записей курсор = 10:00 (с микросекундами, как на сервере)
+    expect(nextCursor(t(9), '2026-01-01T00:10:00.000123+00:00', t(20))).toBe('2026-01-01T00:10:00.000123Z');
   });
 });
 
@@ -106,6 +125,12 @@ describe('синхронизация', () => {
     }
     expect(server.logs.size).toBe(56);
     expect(A.store.getState().logs.length).toBe(56);
+    // Без изменений (после окна запаса) — не скачивается ничего, в том числе последняя пачка.
+    server.tick(10 * 60_000);
+    await A.sync.syncWith(server.backend(), USER);
+    server.tick(10 * 60_000);
+    await A.sync.syncWith(server.backend(), USER);
+    expect(server.pulledLogCounts[server.pulledLogCounts.length - 1]).toBe(0);
   });
 
   it('два устройства: отметки и отмены доходят в обе стороны, без дублей', async () => {

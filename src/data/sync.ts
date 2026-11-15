@@ -68,10 +68,33 @@ interface EventRow {
 }
 
 const iso = (t: string) => new Date(t).toISOString();
-export const maxIso = (a: string | null, b: string | null) => (!a ? b : !b ? a : a > b ? a : b);
-export const minIso = (a: string | null, b: string | null) => (!a ? b : !b ? a : a < b ? a : b);
+
+/**
+ * Метка времени сервера в едином виде с МИКРОСЕКУНДАМИ: 2026-11-15T21:21:35.558123Z.
+ * Postgres хранит микросекунды, а Date в JS обрезает их до миллисекунд — курсор,
+ * прошедший через Date, оказывается чуть раньше строк и вызывает их повторное скачивание.
+ * Единый формат позволяет сравнивать метки как строки.
+ */
+export function normTs(s: string): string {
+  const m = /^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2}:\d{2})(?:\.(\d{1,6}))?(Z|[+-]\d{2}(?::?\d{2})?)?$/.exec(s);
+  if (m && (!m[4] || m[4] === 'Z' || /^\+00(:?00)?$/.test(m[4]))) return `${m[1]}T${m[2]}.${(m[3] ?? '').padEnd(6, '0')}Z`;
+  // Другой часовой пояс — через Date (точность до мс; округление вниз безопасно для курсора).
+  return new Date(s).toISOString().replace(/Z$/, '000Z');
+}
+export const maxIso = (a: string | null, b: string | null) => {
+  if (!a || !b) return a ? normTs(a) : b ? normTs(b) : null;
+  const x = normTs(a);
+  const y = normTs(b);
+  return x > y ? x : y;
+};
+export const minIso = (a: string | null, b: string | null) => {
+  if (!a || !b) return a ? normTs(a) : b ? normTs(b) : null;
+  const x = normTs(a);
+  const y = normTs(b);
+  return x < y ? x : y;
+};
 const maxUpdated = (rows: { updated_at?: string }[]) =>
-  rows.reduce<string | null>((m, r) => (r.updated_at ? maxIso(m, iso(r.updated_at)) : m), null);
+  rows.reduce<string | null>((m, r) => (r.updated_at ? maxIso(m, r.updated_at) : m), null);
 const toLog = (r: LogRow): QadaLog => ({
   id: r.id,
   prayer: r.prayer,
@@ -111,7 +134,7 @@ export function supabaseBackend(client: SupabaseClient): SyncBackend {
     let after: { v: string; id: string } | null = null;
     for (;;) {
       let q = client.from(table).select('*').eq('user_id', userId);
-      if (since) q = q.gt(sortCol, since);
+      if (since) q = q.gt(sortCol, sortCol === 'updated_at' ? normTs(since) : since);
       if (after) q = q.or(`${sortCol}.gt.${after.v},and(${sortCol}.eq.${after.v},id.gt.${after.id})`);
       const { data, error } = await q.order(sortCol).order('id').limit(PAGE);
       if (error) throw error;
@@ -152,7 +175,7 @@ export function supabaseBackend(client: SupabaseClient): SyncBackend {
       }
       try {
         const res = await pullAll(userId, 'updated_at', since);
-        return { ...res, serverTime: iso(serverTime as string) };
+        return { ...res, serverTime: normTs(serverTime as string) };
       } catch (e) {
         if (!isMissingColumn(e)) throw e;
         return pullAll(userId, 'created_at', null);
@@ -196,7 +219,7 @@ export function adoptLocalData(userId: string) {
   else actions.replaceFromSync({ ...s, ownerId: userId, syncCursor: null, unsynced: { logs: [], events: [] } });
 }
 
-const minus = (isoTime: string, ms: number) => new Date(new Date(isoTime).getTime() - ms).toISOString();
+const minus = (ts: string, ms: number) => normTs(new Date(new Date(ts).getTime() - ms).toISOString());
 
 /**
  * Следующий курсор: наибольшее увиденное updated_at, но не позже (время сервера − запас).
