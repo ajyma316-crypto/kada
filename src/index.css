@@ -1,0 +1,75 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Цветовые токены: светлая тема по умолчанию, тёмная — класс .dark на <html>. */
+:root {
+  --bg: 247 246 242;
+  --surface: 255 255 255;
+  --surface-2: 241 240 234;
+  --line: 227 225 217;
+  --ink: 20 30 27;
+  --muted: 96 107 102;
+  --brand: 14 110 85;
+  --brand-soft: 224 240 232;
+  --brand-ink: 255 255 255;
+  --gold: 168 128 52;
+  --warn: 146 90 6;
+  --warn-soft: 253 243 219;
+  --danger: 185 28 28;
+  color-scheme: light;
+}
+.dark {
+  --bg: 9 17 15;
+  --surface: 16 27 24;
+  --surface-2: 23 37 33;
+  --line: 36 53 48;
+  --ink: 231 237 234;
+  --muted: 146 162 156;
+  --brand: 56 196 150;
+  --brand-soft: 18 50 41;
+  --brand-ink: 5 22 17;
+  --gold: 214 178 96;
+  --warn: 240 178 72;
+  --warn-soft: 48 37 14;
+  --danger: 248 113 113;
+  color-scheme: dark;
+}
+
+@layer base {
+  html { -webkit-tap-highlight-color: transparent; }
+  body {
+    @apply bg-bg text-ink font-sans antialiased;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+  [dir='rtl'] body { font-family: theme('fontFamily.arabic'); }
+  :focus-visible { @apply outline-none ring-2 ring-brand/60 ring-offset-2 ring-offset-bg; }
+  input[type='date']::-webkit-calendar-picker-indicator { opacity: 0.6; }
+  .dark input[type='date']::-webkit-calendar-picker-indicator { filter: invert(1); }
+}
+
+@layer components {
+  .card { @apply rounded-xl2 border border-line bg-surface p-5 shadow-[0_1px_2px_rgb(0_0_0/0.03)]; }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium
+      transition active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40;
+  }
+  .btn-primary { @apply btn bg-brand text-brand-ink hover:brightness-110; }
+  .btn-ghost { @apply btn border border-line bg-surface text-ink hover:bg-surface-2; }
+  .btn-quiet { @apply btn text-muted hover:bg-surface-2 hover:text-ink; }
+  .input {
+    @apply w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 text-[15px] text-ink
+      placeholder:text-muted/70 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20;
+  }
+  .label { @apply mb-1.5 block text-sm font-medium text-ink; }
+  .hint { @apply mt-1.5 text-xs leading-relaxed text-muted; }
+  .eyebrow { @apply text-xs font-semibold uppercase tracking-[0.08em] text-muted; }
+  .ar { font-family: theme('fontFamily.arabic'); unicode-bidi: isolate; }
+  .num { font-variant-numeric: tabular-nums; }
+}
+
+@media print {
+  .no-print { display: none !important; }
+  body { background: white; }
+  .card { break-inside: avoid; box-shadow: none; }
+}
