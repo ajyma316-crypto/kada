@@ -79,3 +79,11 @@ jobs:
             -destination 'generic/platform=iOS Simulator' \
             -derivedDataPath build CODE_SIGNING_ALLOWED=NO build | tail -n 40
           test -d build/Build/Products/Debug-iphonesimulator/App.app
+          test -f build/Build/Products/Debug-iphonesimulator/App.app/PrivacyInfo.xcprivacy
+      - name: Архив Release без подписи (проверка конфигурации для TestFlight)
+        run: |
+          xcodebuild -project ios/App/App.xcodeproj -scheme App \
+            -configuration Release -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" -derivedDataPath build-release \
+            CODE_SIGNING_ALLOWED=NO archive | tail -n 40
+          test -d "$RUNNER_TEMP/App.xcarchive/Products/Applications/App.app"
