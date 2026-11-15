@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { useT } from '../i18n';
 import { useCloud } from '../data/cloud';
+import { retrySave, useSaveStatus } from '../data/store';
 import { Icon } from './Icon';
 
 const NAV = [
@@ -65,6 +66,7 @@ export function Layout() {
         </header>
 
         <main className="mx-auto w-full max-w-5xl px-4 pb-28 pt-6 sm:px-6 lg:px-10 lg:pb-12 lg:pt-10">
+          <SaveErrorBanner />
           <Outlet />
         </main>
       </div>
@@ -86,6 +88,26 @@ export function Layout() {
           </NavLink>
         ))}
       </nav>
+    </div>
+  );
+}
+
+/** Предупреждение, если данные не удалось записать на устройство (вместо тихой потери). */
+function SaveErrorBanner() {
+  const { t } = useT();
+  const { status, error } = useSaveStatus();
+  if (status !== 'error') return null;
+  return (
+    <div role="alert" className="mb-5 flex gap-3 rounded-xl border border-danger/40 bg-danger/10 px-4 py-3 text-sm">
+      <Icon name="alert" size={18} className="mt-0.5 shrink-0 text-danger" />
+      <div className="min-w-0 flex-1">
+        <p className="font-semibold">{t('save.error.title')}</p>
+        <p className="mt-0.5 text-muted">{t('save.error.text')}</p>
+        {error && <p className="mt-1 break-words text-xs text-muted">{error}</p>}
+        <button className="btn-ghost mt-3 py-1.5" onClick={() => void retrySave()}>
+          {t('save.error.retry')}
+        </button>
+      </div>
     </div>
   );
 }

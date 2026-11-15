@@ -25,3 +25,12 @@ describe('merge', () => {
     expect(pickNewer(null, { updatedAt: '1' })?.updatedAt).toBe('1');
   });
 });
+
+describe('порядок записей', () => {
+  it('одинаковое время — порядок по id, независимо от порядка входа', () => {
+    const a = L('b-id', '2026-01-01T00:00:00.000Z');
+    const b = L('a-id', '2026-01-01T00:00:00.000Z');
+    expect(mergeLogs([a, b], []).map((x) => x.id)).toEqual(['a-id', 'b-id']);
+    expect(mergeLogs([b, a], []).map((x) => x.id)).toEqual(['a-id', 'b-id']);
+  });
+});

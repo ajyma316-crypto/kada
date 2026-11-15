@@ -10,8 +10,12 @@
     <script>
       // Тема применяется до отрисовки, чтобы не было вспышки светлого фона.
       try {
-        var s = JSON.parse(localStorage.getItem('qada:v1') || '{}');
-        var t = (s.settings && s.settings.theme) || 'system';
+        // Тема хранится отдельно (qada:theme); qada:v1 — данные старой версии до переноса в IndexedDB.
+        var t = localStorage.getItem('qada:theme');
+        if (!t) {
+          var s = JSON.parse(localStorage.getItem('qada:v1') || '{}');
+          t = (s.settings && s.settings.theme) || 'system';
+        }
         if (t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme: dark)').matches))
           document.documentElement.classList.add('dark');
       } catch (e) {}

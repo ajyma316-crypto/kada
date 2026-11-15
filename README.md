@@ -53,7 +53,9 @@ src/
     merge.ts         — бесконфликтное слияние данных между устройствами
     dates.ts         — календарные дни и интервалы без ошибок часовых поясов
   data/
-    store.ts         — локальное хранилище (offline-first, localStorage)
+    store.ts         — состояние приложения в памяти + асинхронное сохранение (offline-first)
+    persistence.ts   — хранение на устройстве: IndexedDB (отметки — отдельными записями),
+                       перенос данных из старой версии (localStorage), запасной вариант
     sync.ts, cloud.tsx, supabase.ts — авторизация и синхронизация
   i18n/              — переводы (ru, ky, en)
   components/, pages/ — интерфейс

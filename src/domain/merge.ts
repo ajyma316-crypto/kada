@@ -6,6 +6,10 @@
  */
 import type { DebtEvent, QadaLog } from './types';
 
+/** Канонический порядок записей: по времени, при равенстве — по id (детерминированно на всех устройствах). */
+export const byCreated = <T extends { createdAt: string; id: string }>(a: T, b: T) =>
+  a.createdAt < b.createdAt ? -1 : a.createdAt > b.createdAt ? 1 : a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+
 export function mergeLogs(local: QadaLog[], remote: QadaLog[]): QadaLog[] {
   const map = new Map<string, QadaLog>();
   for (const l of local) map.set(l.id, l);
@@ -14,13 +18,13 @@ export function mergeLogs(local: QadaLog[], remote: QadaLog[]): QadaLog[] {
     if (!l) map.set(r.id, r);
     else if (!l.voidedAt && r.voidedAt) map.set(r.id, { ...l, voidedAt: r.voidedAt });
   }
-  return [...map.values()].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  return [...map.values()].sort(byCreated);
 }
 
 export function mergeEvents(local: DebtEvent[], remote: DebtEvent[]): DebtEvent[] {
   const map = new Map<string, DebtEvent>();
   for (const e of [...remote, ...local]) map.set(e.id, e);
-  return [...map.values()].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  return [...map.values()].sort(byCreated);
 }
 
 export function pickNewer<T extends { updatedAt: string }>(a: T | null, b: T | null): T | null {
