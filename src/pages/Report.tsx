@@ -19,7 +19,6 @@ export default function Report() {
   const calc = useStore((st) => st.calc);
   const plan = useStore((st) => st.plan);
   const months = useMemo(() => series(logs, 'month', 12, todayISO()), [logs]);
-  const monthFmt = new Intl.DateTimeFormat(tr.lang, { month: 'long', year: 'numeric', timeZone: 'UTC' });
 
   return (
     <div className="mx-auto max-w-3xl bg-bg px-6 py-8 print:max-w-none print:p-0">
@@ -82,7 +81,7 @@ export default function Report() {
           <tbody className="divide-y divide-line">
             {months.map((m) => (
               <tr key={m.key}>
-                <td className="py-1.5">{monthFmt.format(new Date(m.start + 'T00:00:00Z'))}</td>
+                <td className="py-1.5">{tr.monthYear(m.start)}</td>
                 <td className="num py-1.5 text-end">{num(m.total)}</td>
               </tr>
             ))}

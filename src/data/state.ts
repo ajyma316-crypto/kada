@@ -23,7 +23,8 @@ export interface AppState {
 const EPOCH = '1970-01-01T00:00:00.000Z';
 
 export function initialState(): AppState {
-  const lang: Settings['lang'] = typeof navigator !== 'undefined' && navigator.language?.startsWith('en') ? 'en' : 'ru';
+  const nav = typeof navigator !== 'undefined' ? navigator.language ?? '' : '';
+  const lang: Settings['lang'] = nav.startsWith('ky') ? 'ky' : nav.startsWith('en') ? 'en' : 'ru';
   return {
     v: 1,
     ownerId: null,

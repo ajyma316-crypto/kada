@@ -118,7 +118,7 @@ export interface Settings {
   madhab: Madhab;
   gender: Gender;
   theme: 'system' | 'light' | 'dark';
-  lang: 'ru' | 'en';
+  lang: 'ru' | 'ky' | 'en';
   includeWitr: boolean;
   updatedAt: string;
 }

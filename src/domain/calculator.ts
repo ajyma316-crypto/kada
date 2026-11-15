@@ -93,7 +93,7 @@ export function calculate(input: CalcInput, madhab: Madhab, today: string = toda
       params: {
         age: input.bulughAge,
         unit: input.bulughAgeUnit,
-        solar: lunarToSolarYears(ageLunar).toFixed(1),
+        solar: Math.round(lunarToSolarYears(ageLunar) * 10) / 10,
         date: bulughDate,
       },
     });

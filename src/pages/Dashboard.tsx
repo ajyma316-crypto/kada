@@ -127,7 +127,7 @@ export default function Dashboard() {
         <Stat
           label={t('dash.month')}
           value={num(month.done)}
-          sub={plan && planMonthTarget ? t('dash.ofPlan', { n: planMonthTarget }) : t('dash.monthSub', { pct: s.debtTotal ? ((month.done / s.debtTotal) * 100).toFixed(1) : 0 })}
+          sub={plan && planMonthTarget ? t('dash.ofPlan', { n: planMonthTarget }) : t('dash.monthSub', { pct: s.debtTotal ? Math.round((month.done / s.debtTotal) * 1000) / 10 : 0 })}
           progress={plan && planMonthTarget ? month.done / planMonthTarget : undefined}
         />
         <Stat label={t('dash.streak')} value={num(days)} sub={t('unit.days', { n: days })} icon="flame" />

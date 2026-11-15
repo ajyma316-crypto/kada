@@ -3,6 +3,8 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { ru } from '../ru';
 import { en } from '../en';
+import { ky } from '../ky';
+import { MADHAB_RULES, COMMON_RULES } from '../../fiqh/rules';
 import { ALL_PRAYERS } from '../../domain/types';
 
 function files(dir: string): string[] {
@@ -33,12 +35,29 @@ const dynamic = [
 dynamic.forEach((k) => used.add(k));
 
 describe('i18n', () => {
-  it('все используемые ключи есть в ru и en', () => {
-    const missing = [...used].filter((k) => !(k in ru) || !(k in en));
+  it('все используемые ключи есть во всех языках', () => {
+    const missing = [...used].filter((k) => !(k in ru) || !(k in en) || !(k in ky));
     expect(missing).toEqual([]);
   });
-  it('ru и en содержат одинаковый набор ключей', () => {
-    expect(Object.keys(ru).filter((k) => !(k in en))).toEqual([]);
-    expect(Object.keys(en).filter((k) => !(k in ru))).toEqual([]);
+  it('ru, ky и en содержат одинаковый набор ключей', () => {
+    for (const d of [en, ky]) {
+      expect(Object.keys(ru).filter((k) => !(k in d))).toEqual([]);
+      expect(Object.keys(d).filter((k) => !(k in ru))).toEqual([]);
+    }
+  });
+  it('все тексты правил фикха переведены на кыргызский', () => {
+    const missing: string[] = [];
+    const walk = (o: unknown, path: string) => {
+      if (!o || typeof o !== 'object') return;
+      const r = o as Record<string, unknown>;
+      if (typeof r.ru === 'string' && typeof r.en === 'string') {
+        if (typeof r.ky !== 'string') missing.push(path);
+        return;
+      }
+      for (const [k, v] of Object.entries(r)) walk(v, `${path}.${k}`);
+    };
+    walk(MADHAB_RULES, 'rules');
+    walk(COMMON_RULES, 'common');
+    expect(missing).toEqual([]);
   });
 });

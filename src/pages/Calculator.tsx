@@ -108,7 +108,7 @@ export default function Calculator() {
                   <Field
                     id="age"
                     label={t('calc.bulughAge')}
-                    hint={input.bulughAgeUnit === 'lunar' ? t('calc.lunarHint', { solar: lunarToSolarYears(input.bulughAge).toFixed(1) }) : undefined}
+                    hint={input.bulughAgeUnit === 'lunar' ? t('calc.lunarHint', { solar: Math.round(lunarToSolarYears(input.bulughAge) * 10) / 10 }) : undefined}
                   >
                     <div className="flex gap-2">
                       <NumberInput id="age" value={input.bulughAge} min={1} max={39} step={0.5} onChange={(n) => set({ bulughAge: n })} className="w-24" />

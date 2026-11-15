@@ -330,7 +330,7 @@ export const ru: Dict = {
   'settings.appearance': 'Оформление',
   'settings.theme': 'Тема',
   'settings.lang': 'Язык',
-  'settings.langSoon': 'Кыргызский и арабский языки — в разработке.',
+  'settings.langSoon': 'Арабский язык — в разработке.',
   'settings.data': 'Данные',
   'settings.dataText': 'Все данные хранятся на этом устройстве и работают без интернета. Сделайте резервную копию или войдите в аккаунт для синхронизации.',
   'settings.backup': 'Резервная копия',

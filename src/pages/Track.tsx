@@ -122,15 +122,14 @@ export default function Track() {
 }
 
 export function LogList({ logs }: { logs: QadaLog[] }) {
-  const { t, lang } = useT();
+  const { t, time } = useT();
   const toast = useToast();
-  const tf = new Intl.DateTimeFormat(lang, { hour: '2-digit', minute: '2-digit' });
   return (
     <ul className="divide-y divide-line overflow-hidden rounded-xl2 border border-line bg-surface">
       {logs.map((x) => (
         <li key={x.id} className={`flex items-center justify-between gap-3 px-4 py-2.5 text-sm ${x.voidedAt ? 'text-muted' : ''}`}>
           <span className="flex min-w-0 items-center gap-3">
-            <span className="num w-12 shrink-0 text-muted">{tf.format(new Date(x.createdAt))}</span>
+            <span className="num w-12 shrink-0 text-muted">{time(x.createdAt)}</span>
             <span className={x.voidedAt ? 'line-through' : 'font-medium'}>
               {t(`prayer.${x.prayer}`)} <span className="num">+{x.count}</span>
             </span>

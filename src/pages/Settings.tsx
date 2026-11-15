@@ -140,7 +140,7 @@ export default function SettingsPage() {
 }
 
 function Account() {
-  const { t, lang } = useT();
+  const { t, dateTime } = useT();
   const cloud = useCloud();
   const lastSync = useStore((s) => s.lastSyncAt);
   const [mode, setMode] = useState<'in' | 'up'>('in');
@@ -168,7 +168,7 @@ function Account() {
           <Icon name="cloud" size={18} className={cloud.status === 'error' ? 'text-danger' : 'text-brand'} />
           <span className="flex-1">
             {t(`sync.status.${cloud.status}`)}
-            {lastSync && <span className="block text-xs text-muted">{t('sync.last', { time: new Date(lastSync).toLocaleString(lang) })}</span>}
+            {lastSync && <span className="block text-xs text-muted">{t('sync.last', { time: dateTime(lastSync) })}</span>}
           </span>
           <button className="btn-ghost py-1.5" onClick={() => cloud.sync()} disabled={cloud.status === 'syncing'}>{t('sync.now')}</button>
         </div>

@@ -315,7 +315,7 @@ export const en: Dict = {
   'settings.appearance': 'Appearance',
   'settings.theme': 'Theme',
   'settings.lang': 'Language',
-  'settings.langSoon': 'Kyrgyz and Arabic are in progress.',
+  'settings.langSoon': 'Arabic is in progress.',
   'settings.data': 'Data',
   'settings.dataText': 'All data is stored on this device and works offline. Make a backup or sign in to sync.',
   'settings.backup': 'Backup',

@@ -18,7 +18,7 @@ const COUNTS: Record<Granularity, number> = { day: 30, week: 12, month: 12, year
 
 export default function Stats() {
   const tr = useT();
-  const { t, num, date, dateShort, lang } = tr;
+  const { t, num, date, dateShort } = tr;
   const logs = useStore((s) => s.logs);
   const events = useStore((s) => s.debtEvents);
   const s = useSummary();
@@ -42,13 +42,10 @@ export default function Stats() {
     return out;
   }, [logs, today]);
 
-  const monthFmt = new Intl.DateTimeFormat(lang, { month: 'short', timeZone: 'UTC' });
-  const monthYearFmt = new Intl.DateTimeFormat(lang, { month: 'long', year: 'numeric', timeZone: 'UTC' });
-  const asDate = (d: string) => new Date(d + 'T00:00:00Z');
   const axisLabel = (start: string) =>
-    g === 'day' ? start.slice(8) : g === 'week' ? dateShort(start) : g === 'month' ? monthFmt.format(asDate(start)) : start.slice(0, 4);
+    g === 'day' ? start.slice(8) : g === 'week' ? dateShort(start) : g === 'month' ? tr.month(start) : start.slice(0, 4);
   const tipLabel = (start: string) =>
-    g === 'day' ? date(start) : g === 'week' ? t('stats.weekOf', { date: dateShort(start) }) : g === 'month' ? monthYearFmt.format(asDate(start)) : start.slice(0, 4);
+    g === 'day' ? date(start) : g === 'week' ? t('stats.weekOf', { date: dateShort(start) }) : g === 'month' ? tr.monthYear(start) : start.slice(0, 4);
 
   const allLogs = useMemo(() => [...logs].reverse(), [logs]);
   const pace = averagePace(logs, 30, today);
