@@ -21,6 +21,8 @@ jobs:
   android:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -44,6 +46,19 @@ jobs:
           name: qada-android-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
+      # Постоянная прямая ссылка для установки на телефон (без входа в GitHub):
+      # https://github.com/<owner>/<repo>/releases/download/android-latest/qada.apk
+      - name: Publish APK to release «android-latest»
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          cp android/app/build/outputs/apk/debug/app-debug.apk qada.apk
+          gh release view android-latest >/dev/null 2>&1 || \
+            gh release create android-latest --prerelease --title "QADA для Android (тестовая сборка)" \
+              --notes "Тестовая сборка APK из ветки main. Обновляется автоматически при каждом изменении."
+          gh release upload android-latest qada.apk --clobber
+          gh release edit android-latest --notes "Тестовая сборка APK из ветки main (${GITHUB_SHA::7}). Обновляется автоматически при каждом изменении."
+        env:
+          GH_TOKEN: ${{ github.token }}
 
   ios:
     runs-on: macos-15
