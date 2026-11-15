@@ -59,7 +59,7 @@ export default function Track() {
         title={t('track.title')}
         subtitle={t('track.subtitle')}
         action={
-          <div className="text-end">
+          <div className="sm:text-end">
             <p className="text-xs text-muted">{t('track.today')}</p>
             <p className="num text-2xl font-semibold">{num(todayTotal)}</p>
           </div>

@@ -39,9 +39,8 @@ export default function Dashboard() {
   const projection = plan ? project(s.remaining, plan.perDay, plan.minutesPerRakah, today) : null;
   const planToday = plan ? prayers.reduce((acc, p) => acc + (s.remaining[p] > 0 || month.byPrayerToday[p] > 0 ? plan.perDay[p] : 0), 0) : 0;
   // Ожидаемое по плану в этом месяце (с даты начала плана или с 1-го числа).
-  const planMonthTarget = plan
-    ? planToday * Math.max(0, daysBetween(plan.startDate > month.start ? plan.startDate : month.start, today) + 1)
-    : 0;
+  // Сравниваем месяц с планом, только если план действовал с начала месяца — иначе сравнение вводит в заблуждение.
+  const planMonthTarget = plan && plan.startDate <= month.start ? planToday * (daysBetween(month.start, today) + 1) : 0;
 
   const approx = calc?.result?.approximate && s.debtTotal > 0;
   const pct = Math.floor(s.progress * 1000) / 10;
@@ -96,7 +95,7 @@ export default function Dashboard() {
         <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-center sm:gap-10">
           <ProgressRing value={s.progress} label={t('dash.progressAria', { pct })}>
             <div>
-              <div className="num text-4xl font-semibold tracking-tight">{pct}%</div>
+              <div className="num text-4xl font-semibold tracking-tight">{num(pct)}%</div>
               <div className="text-xs text-muted">{t('dash.progress')}</div>
             </div>
           </ProgressRing>

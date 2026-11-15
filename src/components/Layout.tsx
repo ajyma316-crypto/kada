@@ -95,7 +95,8 @@ function Brand() {
     <NavLink to="/" className="flex items-center gap-2.5">
       <span className="grid h-9 w-9 place-items-center rounded-xl bg-brand text-brand-ink">
         <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-          <path d="M15 4.5a7.5 7.5 0 1 0 0 15 6 6 0 1 1 0-15z" fill="currentColor" />
+          <circle cx="11" cy="12" r="8" fill="currentColor" />
+          <circle cx="14.5" cy="9.5" r="6.8" fill="rgb(var(--brand))" />
         </svg>
       </span>
       <span className="leading-tight">

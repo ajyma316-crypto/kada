@@ -41,7 +41,7 @@ export default function Report() {
           [t('dash.total'), (calc?.result?.approximate ? '≈ ' : '') + num(s.debtTotal)],
           [t('dash.done'), num(s.debtTotal - s.remainingTotal)],
           [t('dash.remaining'), num(s.remainingTotal)],
-          [t('dash.progress'), `${(Math.floor(s.progress * 1000) / 10).toString()}%`],
+          [t('dash.progress'), `${num(Math.floor(s.progress * 1000) / 10)}%`],
         ].map(([k, v]) => (
           <div key={k} className="card p-3">
             <p className="text-xs text-muted">{k}</p>
