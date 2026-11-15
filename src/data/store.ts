@@ -215,6 +215,13 @@ export function useSaveStatus(): { status: SaveStatus; error: string | null } {
 
 const now = () => new Date().toISOString();
 
+/** Отметить записи как ещё не отправленные (только если данные привязаны к аккаунту). */
+function markUnsynced(s: AppState, ids: { logs?: string[]; events?: string[] }): AppState['unsynced'] {
+  if (!s.ownerId) return s.unsynced;
+  const add = (list: string[], extra?: string[]) => (extra?.length ? [...new Set([...list, ...extra])] : list);
+  return { logs: add(s.unsynced.logs, ids.logs), events: add(s.unsynced.events, ids.events) };
+}
+
 export const actions = {
   updateSettings(patch: Partial<Settings>) {
     set((s) => ({ ...s, settings: { ...s.settings, ...patch, updatedAt: now() } }));
@@ -230,13 +237,13 @@ export const actions = {
       const deltas = deltasTo(debtTotals(s.debtEvents), target);
       if (Object.keys(deltas).length === 0) return s;
       const ev: DebtEvent = { id: uid(), createdAt: now(), kind, deltas, note };
-      return { ...s, debtEvents: [...s.debtEvents, ev] };
+      return { ...s, debtEvents: [...s.debtEvents, ev], unsynced: markUnsynced(s, { events: [ev.id] }) };
     });
   },
 
   logPrayer(prayer: PrayerId, count = 1): QadaLog {
     const l: QadaLog = { id: uid(), prayer, count, createdAt: now(), voidedAt: null };
-    set((s) => ({ ...s, logs: [...s.logs, l] }));
+    set((s) => ({ ...s, logs: [...s.logs, l], unsynced: markUnsynced(s, { logs: [l.id] }) }));
     return l;
   },
 
@@ -244,6 +251,7 @@ export const actions = {
     set((s) => ({
       ...s,
       logs: s.logs.map((l) => (l.id === id && !l.voidedAt ? { ...l, voidedAt: now() } : l)),
+      unsynced: markUnsynced(s, { logs: [id] }),
     }));
   },
 
@@ -258,7 +266,8 @@ export const actions = {
 
   importState(raw: unknown) {
     const next = normalizeState(raw);
-    set((s) => ({ ...next, ownerId: s.ownerId, lastSyncAt: null }));
+    // После восстановления копии следующая синхронизация — полная (сравнит всё с сервером).
+    set((s) => ({ ...next, ownerId: s.ownerId, lastSyncAt: null, syncCursor: null, unsynced: { logs: [], events: [] } }));
   },
 
   /** Полная очистка данных на устройстве. */

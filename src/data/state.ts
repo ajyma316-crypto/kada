@@ -18,6 +18,13 @@ export interface AppState {
   logs: QadaLog[];
   plan: Plan | null;
   lastSyncAt: string | null;
+  /**
+   * Курсор инкрементальной синхронизации: наибольшее серверное updated_at, уже полученное
+   * с сервера. null — следующая синхронизация будет полной (первый вход, обновление версии).
+   */
+  syncCursor: string | null;
+  /** Записи, созданные/изменённые на этом устройстве и ещё не отправленные на сервер (только при входе). */
+  unsynced: { logs: string[]; events: string[] };
 }
 
 const EPOCH = '1970-01-01T00:00:00.000Z';
@@ -41,6 +48,8 @@ export function initialState(): AppState {
     logs: [],
     plan: null,
     lastSyncAt: null,
+    syncCursor: null,
+    unsynced: { logs: [], events: [] },
   };
 }
 
@@ -57,5 +66,10 @@ export function normalizeState(raw: unknown): AppState {
     calc: r.calc ? { ...r.calc, input: { ...defaultCalcInput(), ...r.calc.input } } : null,
     debtEvents: Array.isArray(r.debtEvents) ? r.debtEvents : [],
     logs: Array.isArray(r.logs) ? r.logs.filter((l) => l && typeof l.id === 'string' && l.count > 0) : [],
+    syncCursor: typeof r.syncCursor === 'string' ? r.syncCursor : null,
+    unsynced: {
+      logs: Array.isArray(r.unsynced?.logs) ? r.unsynced.logs : [],
+      events: Array.isArray(r.unsynced?.events) ? r.unsynced.events : [],
+    },
   };
 }

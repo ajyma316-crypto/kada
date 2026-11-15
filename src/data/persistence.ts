@@ -78,6 +78,8 @@ const metaChanged = (a: AppState, b: AppState) =>
   a.debtEvents !== b.debtEvents ||
   a.ownerId !== b.ownerId ||
   a.lastSyncAt !== b.lastSyncAt ||
+  a.syncCursor !== b.syncCursor ||
+  a.unsynced !== b.unsynced ||
   a.v !== b.v;
 
 /** Какие отметки нужно записать и какие удалить (сравнение по ссылкам — O(n), без сериализации). */

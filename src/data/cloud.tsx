@@ -3,7 +3,7 @@ import type { Session } from '@supabase/supabase-js';
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { actions, onUserChange } from './store';
 import { cloudConfigured, supabase } from './supabase';
-import { syncNow } from './sync';
+import { deleteAccount as deleteAccountRpc, syncNow } from './sync';
 
 type SyncStatus = 'idle' | 'syncing' | 'error' | 'offline';
 
@@ -18,6 +18,8 @@ interface CloudCtx {
   signUp: (email: string, password: string) => Promise<{ error: string | null; needsConfirm: boolean }>;
   resetPassword: (email: string) => Promise<string | null>;
   signOut: (wipeLocal: boolean) => Promise<void>;
+  /** Удалить аккаунт и все облачные данные; локальные данные на устройстве тоже очищаются. */
+  deleteAccount: () => Promise<string | null>;
 }
 
 const Ctx = createContext<CloudCtx | null>(null);
@@ -129,6 +131,18 @@ export function CloudProvider({ children }: { children: ReactNode }) {
       }
       await supabase.auth.signOut();
       if (wipeLocal) actions.resetLocal();
+    },
+    async deleteAccount() {
+      if (!supabase) return 'not-configured';
+      try {
+        await deleteAccountRpc(supabase);
+      } catch (e) {
+        return e instanceof Error ? e.message : String((e as { message?: string })?.message ?? e);
+      }
+      // Аккаунта больше нет: завершаем сессию локально и стираем данные с устройства.
+      await supabase.auth.signOut({ scope: 'local' });
+      actions.resetLocal();
+      return null;
     },
   };
 

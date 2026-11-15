@@ -149,6 +149,9 @@ function Account() {
   const [msg, setMsg] = useState<{ tone: 'info' | 'error'; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [signOutOpen, setSignOutOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   if (!cloud.configured) {
     return (
@@ -173,7 +176,46 @@ function Account() {
           <button className="btn-ghost py-1.5" onClick={() => cloud.sync()} disabled={cloud.status === 'syncing'}>{t('sync.now')}</button>
         </div>
         {cloud.error && <p className="mt-2 text-xs text-danger">{cloud.error}</p>}
-        <button className="btn-quiet mt-4" onClick={() => setSignOutOpen(true)}>{t('account.signOut')}</button>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <button className="btn-quiet" onClick={() => setSignOutOpen(true)}>{t('account.signOut')}</button>
+          <button
+            className="btn text-danger hover:bg-danger/10"
+            onClick={() => {
+              setDeleteError(null);
+              setDeleteOpen(true);
+            }}
+          >
+            <Icon name="trash" size={17} /> {t('account.delete')}
+          </button>
+        </div>
+        <Modal open={deleteOpen} onClose={() => !deleteBusy && setDeleteOpen(false)} title={t('account.delete')}>
+          <p className="text-sm text-muted">{t('account.deleteText')}</p>
+          <p className="mt-2 text-sm text-muted">{t('account.deleteBackup')}</p>
+          {deleteError && (
+            <div className="mt-3">
+              <Notice tone="error">{t('account.deleteError', { error: deleteError })}</Notice>
+            </div>
+          )}
+          <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-end">
+            <button className="btn-ghost" onClick={() => exportJSON(getState())} disabled={deleteBusy}>
+              <Icon name="download" size={17} /> {t('settings.backup')}
+            </button>
+            <button className="btn-ghost" onClick={() => setDeleteOpen(false)} disabled={deleteBusy}>{t('common.cancel')}</button>
+            <button
+              className="btn bg-danger text-white"
+              disabled={deleteBusy}
+              onClick={async () => {
+                setDeleteBusy(true);
+                const err = await cloud.deleteAccount();
+                setDeleteBusy(false);
+                if (err) setDeleteError(err);
+                else setDeleteOpen(false);
+              }}
+            >
+              {deleteBusy ? t('account.deleting') : t('account.deleteConfirm')}
+            </button>
+          </div>
+        </Modal>
         <Modal open={signOutOpen} onClose={() => setSignOutOpen(false)} title={t('account.signOut')}>
           <p className="text-sm text-muted">{t('account.signOutText')}</p>
           <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-end">
