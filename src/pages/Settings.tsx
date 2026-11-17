@@ -1,5 +1,6 @@
 /** Настройки: мазхаб, профиль, оформление, язык, аккаунт и синхронизация, данные. */
 import { useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Icon } from '../components/Icon';
 import { useToast } from '../components/Toast';
 import { Card, Field, Modal, Notice, PageHeader, Segmented, Toggle } from '../components/ui';
@@ -81,6 +82,14 @@ export default function SettingsPage() {
           </div>
         </Card>
 
+        <Link to="/install" className="card flex items-center justify-between gap-4 transition hover:border-brand/40">
+          <div>
+            <p className="font-semibold">{t('install.settingsLink')}</p>
+            <p className="mt-0.5 text-sm text-muted">{t('install.settingsLinkText')}</p>
+          </div>
+          <Icon name="arrow" className="shrink-0 text-brand" />
+        </Link>
+
         <Account />
 
         <Card>
@@ -117,7 +126,10 @@ export default function SettingsPage() {
           </div>
         </Card>
 
-        <p className="pb-4 text-center text-xs text-muted">QADA · {t('settings.privacy')}</p>
+        <p className="pb-4 text-center text-xs text-muted">
+          QADA {__APP_VERSION__} · {t('settings.privacy')} ·{' '}
+          <Link to="/privacy" className="underline">{t('privacy.title')}</Link>
+        </p>
       </div>
 
       <Modal open={confirmReset} onClose={() => setConfirmReset(false)} title={t('settings.reset')}>

@@ -38,25 +38,55 @@ jobs:
       - run: npm test
       - run: npm run build
       - run: npx cap sync android
-      - name: Build debug APK
+      - name: Ключ подписи (если задан в секретах)
+        id: signing
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+            echo "ANDROID_KEYSTORE_FILE=$RUNNER_TEMP/upload.jks" >> "$GITHUB_ENV"
+            echo "signed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::Секрет ANDROID_KEYSTORE_BASE64 не задан — собирается отладочный APK с временным ключом (обновления поверх не установятся)."
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Сборка
         working-directory: android
-        run: ./gradlew assembleDebug --no-daemon
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          export VERSION_CODE=$((GITHUB_RUN_NUMBER + 100))
+          export VERSION_NAME=$(node -p "require('../package.json').version")
+          if [ "${{ steps.signing.outputs.signed }}" = "true" ]; then
+            ./gradlew assembleRelease bundleRelease --no-daemon
+            cp app/build/outputs/apk/release/app-release.apk ../qada.apk
+            cp app/build/outputs/bundle/release/app-release.aab ../qada.aab
+          else
+            ./gradlew assembleDebug --no-daemon
+            cp app/build/outputs/apk/debug/app-debug.apk ../qada.apk
+          fi
+          rm -f "$RUNNER_TEMP/upload.jks"
       - uses: actions/upload-artifact@v4
         with:
-          name: qada-android-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: qada-android
+          path: |
+            qada.apk
+            qada.aab
+          if-no-files-found: warn
           retention-days: 30
       # Постоянная прямая ссылка для установки на телефон (без входа в GitHub):
       # https://github.com/<owner>/<repo>/releases/download/android-latest/qada.apk
-      - name: Publish APK to release «android-latest»
+      - name: Опубликовать APK в релиз «android-latest»
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
-          cp android/app/build/outputs/apk/debug/app-debug.apk qada.apk
           gh release view android-latest >/dev/null 2>&1 || \
-            gh release create android-latest --prerelease --title "QADA для Android (тестовая сборка)" \
-              --notes "Тестовая сборка APK из ветки main. Обновляется автоматически при каждом изменении."
+            gh release create android-latest --prerelease --title "QADA для Android" --notes "Сборка из ветки main."
           gh release upload android-latest qada.apk --clobber
-          gh release edit android-latest --notes "Тестовая сборка APK из ветки main (${GITHUB_SHA::7}). Обновляется автоматически при каждом изменении."
+          if [ "${{ steps.signing.outputs.signed }}" = "true" ]; then KIND="подписана постоянным ключом — обновления ставятся поверх"; else KIND="отладочная, временный ключ"; fi
+          gh release edit android-latest --notes "Сборка ${GITHUB_SHA::7} из ветки main ($KIND). Обновляется автоматически."
         env:
           GH_TOKEN: ${{ github.token }}
 

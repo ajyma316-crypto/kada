@@ -5,6 +5,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 // base './' — приложение можно разместить в любой подпапке (например, /qada/ на GitHub Pages).
 export default defineConfig({
   base: './',
+  define: { __APP_VERSION__: JSON.stringify(process.env.npm_package_version ?? '') },
   plugins: [
     react(),
     VitePWA({

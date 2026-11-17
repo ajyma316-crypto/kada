@@ -12,6 +12,8 @@ import Stats from './pages/Stats';
 import Rules from './pages/Rules';
 import SettingsPage from './pages/Settings';
 import Report from './pages/Report';
+import Install from './pages/Install';
+import Privacy from './pages/Privacy';
 
 export default function App() {
   const theme = useStore((s) => s.settings.theme);
@@ -46,6 +48,8 @@ export default function App() {
           <Route path="stats" element={<Stats />} />
           <Route path="rules" element={<Rules />} />
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="install" element={<Install />} />
+          <Route path="privacy" element={<Privacy />} />
           <Route path="*" element={<Dashboard />} />
         </Route>
       </Routes>
