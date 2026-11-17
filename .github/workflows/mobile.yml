@@ -80,7 +80,7 @@ jobs:
       # Постоянная прямая ссылка для установки на телефон (без входа в GitHub):
       # https://github.com/<owner>/<repo>/releases/download/android-latest/qada.apk
       - name: Опубликовать APK в релиз «android-latest»
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         run: |
           gh release view android-latest >/dev/null 2>&1 || \
             gh release create android-latest --prerelease --title "QADA для Android" --notes "Сборка из ветки main."
