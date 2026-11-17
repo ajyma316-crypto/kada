@@ -38,37 +38,60 @@ jobs:
       - run: npm test
       - run: npm run build
       - run: npx cap sync android
-      - name: Ключ подписи (если задан в секретах)
+      # Ключ подписи Android. Нужен ОДИН секрет — ANDROID_SIGNING_PASSPHRASE (парольная фраза, которую
+      # владелец придумывает сам). При первой сборке ключ создаётся автоматически, шифруется этой фразой
+      # (AES-256, PBKDF2) и сохраняется в репозитории: android/signing/upload-key.p12.enc.
+      # Без фразы зашифрованный файл бесполезен. Дальше все сборки подписываются этим же ключом.
+      - name: Ключ подписи
         id: signing
         env:
-          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          STORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          PASSPHRASE: ${{ secrets.ANDROID_SIGNING_PASSPHRASE }}
         run: |
-          if [ -n "$KEYSTORE_B64" ]; then
-            # Пробелы и переносы строк могли попасть при копировании — убираем их.
-            CLEAN=$(printf '%s' "$KEYSTORE_B64" | tr -d ' \t\r\n')
-            if ! printf '%s' "$CLEAN" | base64 -d > "$RUNNER_TEMP/upload.jks" 2>/dev/null; then
-              echo "::error::Секрет ANDROID_KEYSTORE_BASE64 повреждён (длина ${#CLEAN} символов, ожидается 5680). Скопируйте значение заново целиком."
-              exit 1
-            fi
-            if ! keytool -list -keystore "$RUNNER_TEMP/upload.jks" -storepass "$STORE_PASS" -alias "$KEY_ALIAS" >/dev/null 2>&1; then
-              echo "::error::Ключ не открывается: проверьте секреты ANDROID_KEYSTORE_PASSWORD (длина ${#STORE_PASS}, ожидается 28) и ANDROID_KEY_ALIAS (ожидается qada)."
-              exit 1
-            fi
-            echo "Ключ подписи прочитан."
-            echo "ANDROID_KEYSTORE_FILE=$RUNNER_TEMP/upload.jks" >> "$GITHUB_ENV"
-            echo "signed=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "::warning::Секрет ANDROID_KEYSTORE_BASE64 не задан — собирается отладочный APK с временным ключом (обновления поверх не установятся)."
-            echo "signed=false" >> "$GITHUB_OUTPUT"
+          ENC=android/signing/upload-key.p12.enc
+          KS="$RUNNER_TEMP/upload.p12"
+          if [ -z "$PASSPHRASE" ]; then
+            echo "::warning::Секрет ANDROID_SIGNING_PASSPHRASE не задан — собирается отладочный APK с временным ключом (обновления поверх не установятся)."
+            echo "signed=false" >> "$GITHUB_OUTPUT"; exit 0
           fi
+          if [ ${#PASSPHRASE} -lt 10 ]; then
+            echo "::error::Парольная фраза в секрете ANDROID_SIGNING_PASSPHRASE слишком короткая (${#PASSPHRASE} символов). Нужно не меньше 10."
+            exit 1
+          fi
+          # Пароль хранилища ключей Android должен быть только из латиницы, а фраза может быть на любом языке —
+          # поэтому пароль хранилища вычисляется из фразы (SHA-256) и скрывается в журналах.
+          KEYPASS=$(printf '%s' "$PASSPHRASE" | sha256sum | cut -c1-40)
+          echo "::add-mask::$KEYPASS"
+          if [ -f "$ENC" ]; then
+            if ! openssl enc -d -aes-256-cbc -pbkdf2 -iter 600000 -in "$ENC" -out "$KS" -pass env:PASSPHRASE 2>/dev/null; then
+              echo "::error::Не удалось расшифровать ключ: фраза в ANDROID_SIGNING_PASSPHRASE не совпадает с той, с которой ключ был создан."
+              exit 1
+            fi
+            echo "Ключ подписи расшифрован."
+          else
+            if [ "${{ github.event_name }}" = "pull_request" ] || [ "${{ github.ref }}" != "refs/heads/main" ]; then
+              echo "signed=false" >> "$GITHUB_OUTPUT"; exit 0
+            fi
+            echo "Создаю постоянный ключ подписи…"
+            keytool -genkeypair -keystore "$KS" -storetype PKCS12 -alias qada -keyalg RSA -keysize 4096 \
+              -validity 10000 -storepass "$KEYPASS" -keypass "$KEYPASS" -dname "CN=QADA, O=QADA, C=KG"
+            mkdir -p android/signing
+            openssl enc -aes-256-cbc -pbkdf2 -iter 600000 -salt -in "$KS" -out "$ENC" -pass env:PASSPHRASE
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add "$ENC"
+            git commit -m "Android: зашифрованный ключ подписи (создан автоматически сборкой)"
+            git push
+            echo "Ключ создан и сохранён в зашифрованном виде: $ENC"
+          fi
+          keytool -list -keystore "$KS" -storepass "$KEYPASS" -alias qada >/dev/null
+          echo "ANDROID_KEYSTORE_FILE=$KS" >> "$GITHUB_ENV"
+          echo "ANDROID_KEYSTORE_PASSWORD=$KEYPASS" >> "$GITHUB_ENV"
+          echo "ANDROID_KEY_PASSWORD=$KEYPASS" >> "$GITHUB_ENV"
+          echo "signed=true" >> "$GITHUB_OUTPUT"
       - name: Сборка
         working-directory: android
         env:
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEY_ALIAS: qada
         run: |
           export VERSION_CODE=$((GITHUB_RUN_NUMBER + 100))
           export VERSION_NAME=$(node -p "require('../package.json').version")
@@ -80,7 +103,7 @@ jobs:
             ./gradlew assembleDebug --no-daemon
             cp app/build/outputs/apk/debug/app-debug.apk ../qada.apk
           fi
-          rm -f "$RUNNER_TEMP/upload.jks"
+          rm -f "$RUNNER_TEMP/upload.p12"
       - uses: actions/upload-artifact@v4
         with:
           name: qada-android
